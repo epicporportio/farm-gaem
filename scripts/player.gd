@@ -4,7 +4,10 @@ var mouse_sens := 0.001
 var twist_input := 0.0
 var pitch_input := 0.0
 
-@export var friction := 0.1
+var linearx
+var linearz
+
+@export var friction := 1
 
 @onready var twist_pivot := $TwistPivot
 @onready var pitch_pivot := $TwistPivot/PitchPivot
@@ -22,12 +25,12 @@ func _process(delta: float) -> void:
 	
 	apply_central_force(twist_pivot.basis * input * 50000 * delta)
 	
-	var linear = linear_velocity
-	linear.x = approach(linear.x, 0.0, friction * delta)
-	linear.z = approach(linear.z, 0.0, friction * delta)
-	linear_velocity = linear 
-	print(linear_velocity)
-
+	print("initial velocity: ", linear_velocity)
+	
+	linear_velocity.x = dampen(linear_velocity.x, friction * delta)
+	linear_velocity.z = dampen(linear_velocity.z, friction * delta)
+	
+	print("final velocity: ", linear_velocity)
 	
 	if Input.is_action_just_pressed("exit"):
 		if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
@@ -57,13 +60,12 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif Input.is_mouse_button_pressed(MOUSE_BUTTON_WHEEL_UP):
 		if spring_arm.spring_length > 0.4:
 			spring_arm.spring_length -= 0.4
-		print(spring_arm.spring_length)
 		
-func approach(u: float, v: float, friction: float) -> float:
-	if u < v:
-		return min(u + friction, v)
-	elif u > v:
-		return max(u - friction, v)
+func dampen(u: float, damp_constant: float) -> float:
+	if u < 0.0:
+		return min(u + damp_constant, 0.0)
+	elif u > 0.0:
+		return max(u - damp_constant, 0.0)
 	else:
-		return v
+		return u
 	
